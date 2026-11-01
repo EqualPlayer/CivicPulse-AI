@@ -55,30 +55,63 @@ Rules:
 """
 
 
+
+
+
 def _call_gemini(image_bytes: bytes, mime_type: str, prompt: str) -> str:
+    import os
+    import time
     from google import genai
+    from google.genai import types
 
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY is missing. Add it to your .env file and restart the server.")
 
-    client = genai.Client(api_key=api_key)
-    interaction = client.interactions.create(
-        model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
-        input=[
-            {"type": "text", "text": prompt},
-            {
-                "type": "image",
-                "data": base64.b64encode(image_bytes).decode("utf-8"),
-                "mime_type": mime_type,
-            },
-        ],
-        response_format={"type": "text", "mime_type": "application/json", "schema": ISSUE_SCHEMA},
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is missing.")
+
+    model = os.getenv(
+        "GEMINI_MODEL",
+        "gemini-3.5-flash-lite"
     )
-    text = getattr(interaction, "output_text", None)
-    if not text:
-        raise RuntimeError("Gemini returned an empty response. Please retry with a clearer image.")
-    return text
+
+    client = genai.Client(
+        api_key=api_key,
+        http_options=types.HttpOptions(timeout=90000),
+    )
+
+    print(f"[Gemini] Starting analysis with {model}...")
+    start = time.time()
+
+    response = client.models.generate_content(
+        model=model,
+        contents=[
+            types.Part.from_bytes(
+                data=image_bytes,
+                mime_type=mime_type,
+            ),
+            prompt,
+        ],
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            response_json_schema=ISSUE_SCHEMA,
+            temperature=0.2,
+            max_output_tokens=1500,
+        ),
+    )
+
+    elapsed = time.time() - start
+
+    print(f"[Gemini] Analysis completed in {elapsed:.2f} seconds.")
+
+    result = response.text
+
+    if not result:
+        raise RuntimeError("Gemini returned an empty response.")
+
+    return result
+
+
+
 
 
 def analyze_civic_image(

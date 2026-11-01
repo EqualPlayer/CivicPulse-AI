@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-
+from starlette.concurrency import run_in_threadpool
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
@@ -68,12 +68,13 @@ async def analyze(
         raise HTTPException(status_code=413, detail=f"Image must be smaller than {MAX_UPLOAD_MB} MB.")
 
     try:
-        analysis = analyze_civic_image(
-            image_bytes=image_bytes,
-            mime_type=image.content_type,
-            description=description,
-            location=location,
-            language=language,
+        analysis = await run_in_threadpool(
+        analyze_civic_image,
+        image_bytes=image_bytes,
+        mime_type=image.content_type,
+        description=description,
+        location=location,
+        language=language,
         )
         return {"analysis": analysis}
     except ValueError as exc:

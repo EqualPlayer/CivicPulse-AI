@@ -34,32 +34,88 @@ $('issueImage').addEventListener('change', (event) => {
   $('dropzone').classList.add('has-image');
 });
 
+
 $('analyzeBtn').addEventListener('click', async () => {
-  if (!selectedImage) return toast('Please add a photo first.');
-  if ($('location').value.trim().length < 3) return toast('Please enter the issue location.');
-  const button = $('analyzeBtn');
-  button.disabled = true;
-  button.innerHTML = '<span class="spinner">◌</span> Analysing image with AI…';
-  const form = new FormData();
-  form.append('image', selectedImage);
-  form.append('location', $('location').value.trim());
-  form.append('description', $('description').value.trim());
-  form.append('language', $('language').value);
-  form.append('provider', $('provider').value);
-  try {
-    const response = await fetch('/api/analyze', {method:'POST', body:form});
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || 'AI analysis failed.');
-    latestAnalysis = payload.analysis;
-    renderAnalysis(latestAnalysis);
-    toast('AI analysis complete. Review the draft before saving.');
-  } catch (error) {
-    toast(error.message || 'Something went wrong.');
-  } finally {
-    button.disabled = false;
-    button.innerHTML = '<span>✦</span> Analyse with AI <span class="btn-arrow">→</span>';
-  }
+    if (!selectedImage) {
+        return toast('Please add a photo first.');
+    }
+
+    if ($('location').value.trim().length < 3) {
+        return toast('Please enter the issue location.');
+    }
+
+    const button = $('analyzeBtn');
+
+    button.disabled = true;
+    button.innerHTML =
+        '<span class="spinner">◌</span> Analysing image with AI…';
+
+    const form = new FormData();
+    form.append('image', selectedImage);
+    form.append('location', $('location').value.trim());
+    form.append('description', $('description').value.trim());
+    form.append('language', $('language').value);
+
+    try {
+        console.log('[CivicPulse] Sending image to Gemini...');
+
+        const response = await fetch('/api/analyze', {
+            method: 'POST',
+            body: form,
+            signal: AbortSignal.timeout(95000)
+        });
+
+        const responseText = await response.text();
+
+        let payload;
+
+        try {
+            payload = JSON.parse(responseText);
+        } catch {
+            throw new Error(
+                `Invalid server response (HTTP ${response.status}).`
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                payload.detail || 'AI analysis failed.'
+            );
+        }
+
+        if (!payload.analysis) {
+            throw new Error(
+                'The server response does not contain AI analysis.'
+            );
+        }
+
+        latestAnalysis = payload.analysis;
+
+        console.log('[CivicPulse] AI analysis received:', latestAnalysis);
+
+        renderAnalysis(latestAnalysis);
+
+        toast('AI analysis complete! Review your complaint.');
+
+    } catch (error) {
+        console.error('[CivicPulse] Analysis error:', error);
+
+        if (
+            error.name === 'TimeoutError' ||
+            error.name === 'AbortError'
+        ) {
+            toast('Analysis timed out. Please try again.');
+        } else {
+            toast(error.message || 'AI analysis failed.');
+        }
+
+    } finally {
+        button.disabled = false;
+        button.innerHTML =
+            '<span>✦</span> Analyse with AI <span class="btn-arrow">→</span>';
+    }
 });
+
 
 function renderAnalysis(data) {
   $('emptyState').hidden = true;
