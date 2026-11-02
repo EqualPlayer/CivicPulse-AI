@@ -14,7 +14,21 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="/"><span class="brand-mark">CP</span><span>CivicPulse<span class="brand-ai"> AI</span></span></a>
-      <div class="topbar-right"><span class="live-dot"></span><span id="systemStatus">Connecting to backend…</span><span class="top-tag">CITIZEN REPORTING</span></div>
+      <div class="topbar-right">
+    <span class="live-dot"></span>
+    <span id="systemStatus">Connecting to backend…</span>
+    <span class="top-tag">CITIZEN REPORTING</span>
+
+    <button class="auth-nav-btn" id="authOpenBtn">
+        Sign in / Register
+    </button>
+
+    <span id="signedInEmail" hidden></span>
+
+    <button class="auth-nav-btn" id="authSignOutBtn" hidden>
+        Sign out
+    </button>
+</div>
     </header>
 
     <main>
@@ -76,8 +90,73 @@
     </main>
     <footer><span class="brand mini"><span class="brand-mark">CP</span><span>CivicPulse<span class="brand-ai"> AI</span></span></span><span>AI-assisted civic reporting · Human review required</span><span>Prototype v0.1</span></footer>
   </div>
+  
+<div class="auth-backdrop" id="authBackdrop" hidden>
+    <div class="auth-card" role="dialog" aria-modal="true"
+         aria-labelledby="authTitle">
+
+        <button class="auth-close" id="authCloseBtn"
+                type="button" aria-label="Close">×</button>
+
+        <div class="auth-brand">CP</div>
+
+        <h2 id="authTitle">Welcome to CivicPulse</h2>
+
+        <p class="auth-subtitle">
+            Sign in to submit and track your civic complaints.
+        </p>
+
+        <div class="auth-tabs">
+            <button id="authSignInTab" class="active" type="button">
+                Sign in
+            </button>
+            <button id="authSignUpTab" type="button">
+                Create account
+            </button>
+        </div>
+
+        <form id="authForm">
+
+            <div id="authNameWrap" hidden>
+                <label for="authName">Full name</label>
+                <input id="authName" type="text"
+                       placeholder="Your full name">
+            </div>
+
+            <label for="authEmail">Email address</label>
+            <input id="authEmail" type="email"
+                   placeholder="you@example.com" required>
+
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password"
+                   placeholder="At least 8 characters"
+                   minlength="8" required>
+
+            <button class="primary-btn" id="authSubmitBtn"
+                    type="submit">
+                Sign in
+            </button>
+        </form>
+
+        <div class="auth-divider">OR</div>
+
+        <button class="google-auth-btn" id="googleSignInBtn"
+                type="button">
+            <span>G</span> Continue with Google
+        </button>
+
+        <p id="authMessage" class="auth-message"
+           aria-live="polite"></p>
+
+        <p class="auth-security-note">
+            Staff accounts require administrator approval.
+            Public registration creates citizen accounts only.
+        </p>
+    </div>
+</div>
+
   <div class="toast" id="toast" role="status"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/static/app.js"></script>
+  <script type="module" src="/static/app.js"></script>
 </body>
 </html>

@@ -1,0 +1,45 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CivicPulse | Worker Portal</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f7f4;color:#17251f;font-family:Arial,sans-serif}
+header{background:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #ddd}
+header strong{color:#176b53;font-size:21px}
+main{max-width:1100px;margin:35px auto;padding:0 18px}
+.card{background:white;border:1px solid #e1e9e3;border-radius:13px;padding:22px;margin-bottom:18px}
+.muted{color:#718078;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+img{width:100%;max-height:300px;object-fit:contain;background:#edf2ef;border-radius:9px}
+label{display:block;font-size:13px;font-weight:bold;margin:13px 0 6px}
+select,textarea,button{width:100%;padding:12px;border-radius:8px;font:inherit}
+select,textarea{border:1px solid #d9e3dc;background:white}
+textarea{min-height:90px;resize:vertical}
+button{border:0;background:#176b53;color:white;cursor:pointer;font-weight:bold;margin-top:12px}
+button:disabled{opacity:.5}
+.pill{display:inline-block;background:#e9f4ec;padding:7px 12px;border-radius:20px;font-size:12px;text-transform:capitalize}
+.error{color:#b3433d}
+.history{border-left:3px solid #a9cbb8;padding:5px 0 5px 14px;margin:12px 0}
+@media(max-width:700px){.grid{grid-template-columns:1fr}header{padding:15px}}
+</style>
+</head>
+<body>
+<header>
+  <strong>CivicPulse AI · Worker Portal</strong>
+  <button id="logoutBtn" style="width:auto;margin:0">Sign out</button>
+</header>
+
+<main>
+  <h1>Assigned complaints</h1>
+  <p class="muted">Review evidence, inspect complaints and record your official actions.</p>
+  <p id="message" class="muted">Verifying your account…</p>
+  <section id="reportList"></section>
+</main>
+
+<script src="/static/worker.js" defer></script>
+</body>
+</html>
