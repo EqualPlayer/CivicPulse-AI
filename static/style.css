@@ -147,3 +147,32 @@
     text-align: center;
     margin-top: 18px;
 }
+
+.report-history {
+    margin-top: 12px;
+}
+
+.report-history button {
+    background: #edf4ef;
+    color: #176b53;
+    border: 1px solid #d6e6dc;
+    padding: 9px 13px;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.history-entry {
+    border-left: 3px solid #176b53;
+    padding: 10px 14px;
+    margin: 12px 0;
+    background: #f6f9f6;
+    border-radius: 5px;
+}
+
+.history-entry p {
+    margin: 6px 0;
+}
+
+.history-entry small {
+    color: #83908a;
+}
