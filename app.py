@@ -51,6 +51,24 @@ def health():
         "database": supabase_connection_status()
     }
 
+@app.get("/api/config")
+def public_config():
+    supabase_url = os.getenv("SUPABASE_URL", "").strip()
+    publishable_key = os.getenv(
+        "SUPABASE_PUBLISHABLE_KEY", ""
+    ).strip()
+
+    if not supabase_url or not publishable_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Supabase authentication is not configured."
+        )
+
+    return {
+        "supabase_url": supabase_url,
+        "supabase_publishable_key": publishable_key
+    }
+
 
 @app.post("/api/analyze")
 async def analyze(

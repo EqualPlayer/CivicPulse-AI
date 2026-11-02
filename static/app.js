@@ -1,3 +1,4 @@
+
 const $ = (id) => document.getElementById(id);
 let latestAnalysis = null;
 let selectedImage = null;
@@ -207,3 +208,213 @@ async function loadHealth() {
 $('refreshBtn').addEventListener('click', loadReports);
 loadHealth();
 loadReports();
+
+let supabaseAuth = null;
+let authMode = 'signin';
+
+const authBackdrop = $('authBackdrop');
+
+function authMessage(message, isError = false) {
+    $('authMessage').textContent = message;
+    $('authMessage').style.color = isError ? '#b3433d' : '#176b53';
+}
+
+function setAuthMode(mode) {
+    authMode = mode;
+
+    const signup = mode === 'signup';
+
+    $('authNameWrap').hidden = !signup;
+
+    $('authSignInTab').classList.toggle('active', !signup);
+    $('authSignUpTab').classList.toggle('active', signup);
+
+    $('authTitle').textContent = signup
+        ? 'Create your account'
+        : 'Welcome to CivicPulse';
+
+    $('authSubmitBtn').textContent = signup
+        ? 'Create citizen account'
+        : 'Sign in';
+
+    authMessage('');
+}
+
+function updateAuthUI(user) {
+    $('authOpenBtn').hidden = !!user;
+    $('signedInEmail').hidden = !user;
+    $('authSignOutBtn').hidden = !user;
+
+    $('signedInEmail').textContent =
+        user ? user.email || 'Signed in' : '';
+
+    if (user) {
+        authBackdrop.hidden = true;
+    }
+}
+
+$('authOpenBtn').addEventListener('click', () => {
+    setAuthMode('signin');
+    authBackdrop.hidden = false;
+});
+
+$('authCloseBtn').addEventListener('click', () => {
+    authBackdrop.hidden = true;
+});
+
+authBackdrop.addEventListener('click', (event) => {
+    if (event.target === authBackdrop) {
+        authBackdrop.hidden = true;
+    }
+});
+
+$('authSignInTab').addEventListener('click', () => {
+    setAuthMode('signin');
+});
+
+$('authSignUpTab').addEventListener('click', () => {
+    setAuthMode('signup');
+});
+
+async function initializeAuthentication() {
+  const { createClient } = await import(
+    'https://esm.sh/@supabase/supabase-js@2'
+);
+    const configResponse = await fetch('/api/config');
+
+    if (!configResponse.ok) {
+        throw new Error('Supabase configuration unavailable.');
+    }
+
+    const config = await configResponse.json();
+
+    if (
+        !config.supabase_url ||
+        !config.supabase_publishable_key
+    ) {
+        throw new Error('Supabase configuration is incomplete.');
+    }
+
+    supabaseAuth = createClient(
+        config.supabase_url,
+        config.supabase_publishable_key
+    );
+
+    const { data, error } = await supabaseAuth.auth.getSession();
+
+    if (error) throw error;
+
+    updateAuthUI(data.session?.user || null);
+
+    supabaseAuth.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session?.user || null);
+    });
+
+    console.log('[CivicPulse] Authentication initialized.');
+}
+
+$('authForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (!supabaseAuth) {
+        return authMessage('Authentication is not configured.', true);
+    }
+
+    const button = $('authSubmitBtn');
+
+    const email = $('authEmail').value.trim();
+    const password = $('authPassword').value;
+    const name = $('authName').value.trim();
+
+    if (authMode === 'signup' && !name) {
+        return authMessage('Please enter your full name.', true);
+    }
+
+    button.disabled = true;
+    authMessage('Please wait...');
+
+    try {
+        if (authMode === 'signup') {
+            const { data, error } = await supabaseAuth.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name
+                    },
+                    emailRedirectTo: window.location.origin
+                }
+            });
+
+            if (error) throw error;
+
+            if (data.session) {
+                authMessage('Account created and signed in.');
+                toast('Welcome to CivicPulse!');
+                authBackdrop.hidden = true;
+            } else {
+                authMessage(
+                    'Registration successful. Please check your email to confirm your account.'
+                );
+            }
+        } else {
+            const { error } =
+                await supabaseAuth.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+            if (error) throw error;
+
+            authBackdrop.hidden = true;
+            toast('Signed in successfully.');
+        }
+    } catch (error) {
+        authMessage(error.message || 'Authentication failed.', true);
+        console.error('[CivicPulse Auth]', error);
+    } finally {
+        button.disabled = false;
+    }
+});
+
+$('googleSignInBtn').addEventListener('click', async () => {
+    if (!supabaseAuth) {
+        return authMessage('Supabase is not initialized.', true);
+    }
+
+    try {
+        const { error } =
+            await supabaseAuth.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
+
+        if (error) throw error;
+
+    } catch (error) {
+        authMessage(error.message, true);
+        console.error('[Google OAuth]', error);
+    }
+});
+
+$('authSignOutBtn').addEventListener('click', async () => {
+    if (!supabaseAuth) return;
+
+    const { error } = await supabaseAuth.auth.signOut();
+
+    if (error) {
+        toast(error.message);
+    } else {
+        toast('Signed out successfully.');
+    }
+});
+
+initializeAuthentication().catch((error) => {
+    console.error('[CivicPulse Auth Initialization]', error);
+
+    $('authOpenBtn').disabled = true;
+
+    toast('Could not connect to authentication service.');
+});
